@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 class AdaBoost(BaseEstimator, ClassifierMixin):
 
-    def __init__(self, T=50, verbose=False, basetype='weaklinear', subopt=1):
+    def __init__(self, T=200, verbose=False, basetype='subopt', subopt=1):
         self.T = T
         self.verbose = verbose
         self.basetype = basetype
@@ -23,9 +23,19 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
         if len(self.classes_) != 2:
             raise NotImplementedError()
 
+        self.class_plus = self.classes_[0]
+        self.class_minus = self.classes_[1]
+
+        y_orig = y
+        y = np.copy(y)
+        y[y_orig == self.class_plus] = 1
+        y[y_orig == self.class_minus] = -1
+
         D = np.ones_like(y, dtype=np.float)
         D = D/len(D)
         self.Z_list = []
+        self.classifiers = []
+        self.alphas = []
 
         for t in range(self.T):
             assert np.isclose(np.sum(D), 1)
@@ -41,7 +51,6 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
                     X_fit[:, selected_feature] = 0.0
             else:
                 raise ValueError('unknown bastype')
-
             predictions = h_t.predict(X)
             epsilon_t = np.sum(D[predictions != y])
 
@@ -54,16 +63,28 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
 
             Z_t = 2*np.sqrt(epsilon_t*(1 - epsilon_t))
             self.Z_list.append(Z_t)
+            self.classifiers.append(h_t)
+            self.alphas.append(alpha_t)
 
             predictions = h_t.predict(X)
             D = D * (np.exp(-alpha_t*y*predictions))
             D = D/Z_t
             #D = D/np.sum(D)
-            print('Z produt = ', np.prod(self.Z_list))
+            #print('Z produt = ', np.prod(self.Z_list))
 
         return self
 
     def predict(self, X):
-        check_is_fitted(self, ['X_', 'y_'])
+        check_is_fitted(self, ['classifiers', 'alphas'])
 
-        pass
+        predictions = np.zeros(X.shape[0], dtype=np.float)
+        for i in range(len(self.classifiers)):
+            predictions += (self.alphas[i]*self.classifiers[i].predict(X))
+
+        ypred = np.sign(predictions)
+
+        y = np.copy(ypred)
+        y[ypred == 1] = self.class_plus
+        y[ypred == -1] = self.class_minus
+
+        return y

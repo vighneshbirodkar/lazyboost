@@ -58,6 +58,7 @@ class SubOptimalStump(BaseEstimator, ClassifierMixin):
         for feature_idx in range(n_features):
             pass
 
+
 class WeakLinearClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(self, verbose=False, rseed=None):
