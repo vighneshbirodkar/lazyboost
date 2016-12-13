@@ -53,6 +53,9 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
                 raise ValueError('unknown bastype')
             predictions = h_t.predict(X)
             epsilon_t = np.sum(D[predictions != y])
+            if np.isclose(epsilon_t, 0):
+                break
+            #epsilon_t = np.max(epsilon_t, 1e-16)
 
             if self.basetype == 'weaklinear' and epsilon_t > 0.5:
                 raise RuntimeError('Base classifier error = %f' % epsilon_t)

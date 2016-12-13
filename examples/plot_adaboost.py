@@ -6,7 +6,7 @@ from sklearn.model_selection import GridSearchCV
 import os
 import csv
 
-datatype = 'ionosphere'
+datatype = 'breastcancer'
 
 if datatype == 'breastcancer':
     data = datasets.load_breast_cancer()
@@ -14,7 +14,7 @@ if datatype == 'breastcancer':
     y = data.target
 
 elif datatype == 'ionosphere':
-    path = os.path.expanduser('~/data/ionoshphere/ionosphere.data.txt')
+    path = os.path.expanduser('~/data/ionosphere/ionosphere.data.txt')
     with open(path) as f:
         reader = csv.reader(f)
         rows = list(reader)
@@ -28,9 +28,11 @@ elif datatype == 'ionosphere':
 elif datatype == 'digits':
     X, y = datasets.load_digits(n_class=2, return_X_y=True)
 
-clf = AdaBoost()
-gsv = GridSearchCV(estimator=clf, param_grid={'subopt': [2]}, n_jobs=4)
 
-gsv.fit(X, y)
-error = 1 - gsv.cv_results_['mean_test_score'][0]
-print('Error = %f' % error)
+for i in range(5):
+    clf = AdaBoost(T=1000)
+    gsv = GridSearchCV(estimator=clf, param_grid={'subopt': [i+1]}, n_jobs=8)
+
+    gsv.fit(X, y)
+    error = 1 - gsv.cv_results_['mean_test_score'][0]
+    print('Subopt = %d Error = %f' % (i + 1, error))
