@@ -9,6 +9,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 
 class AdaBoost(BaseEstimator, ClassifierMixin):
+    delta_list = []
 
     def __init__(self, T=200, verbose=False, basetype='subopt', subopt=1):
         self.T = T
@@ -37,6 +38,7 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
         self.classifiers = []
         self.alphas = []
 
+        delta = np.inf
         for t in range(self.T):
             assert np.isclose(np.sum(D), 1)
 
@@ -53,6 +55,7 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
                 raise ValueError('unknown bastype')
             predictions = h_t.predict(X)
             epsilon_t = np.sum(D[predictions != y])
+            delta = min(delta, 0.5 - epsilon_t)
             if np.isclose(epsilon_t, 0):
                 break
             #epsilon_t = np.max(epsilon_t, 1e-16)
@@ -74,7 +77,8 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
             D = D/Z_t
             #D = D/np.sum(D)
             #print('Z produt = ', np.prod(self.Z_list))
-
+        #print('delta = ', delta)
+            
         return self
 
     def predict(self, X):

@@ -6,7 +6,7 @@ from sklearn.model_selection import GridSearchCV
 import os
 import csv
 
-datatype = 'breastcancer'
+datatype = 'ionosphere'
 
 if datatype == 'breastcancer':
     data = datasets.load_breast_cancer()
@@ -29,10 +29,24 @@ elif datatype == 'digits':
     X, y = datasets.load_digits(n_class=2, return_X_y=True)
 
 
-for i in range(5):
-    clf = AdaBoost(T=1000)
-    gsv = GridSearchCV(estimator=clf, param_grid={'subopt': [i+1]}, n_jobs=8)
+def evaluate_adaboost(Trange, X, y):
+    errors = []
+    for T in Trange:
+        clf = AdaBoost(T=T)
+        gsv = GridSearchCV(estimator=clf, cv=10, param_grid={'subopt': [i+1]},
+                           n_jobs=4)
+        gsv.fit(X, y)
+        error = 1 - gsv.cv_results_['mean_test_score'][0]
+        errors.append(error)
+        print('T = %d error = %f' % (T, error))
+    return errors
 
-    gsv.fit(X, y)
-    error = 1 - gsv.cv_results_['mean_test_score'][0]
-    print('Subopt = %d Error = %f' % (i + 1, error))
+for i in range(5):
+    print('Subopt %d' % (i + 1))
+    Trange = [100, 200, 500, 1000]
+    errors = evaluate_adaboost(Trange, X, y)
+    plt.plot(Trange, errors, label='subopt = %d' % (i + 1))
+
+plt.grid(True)
+plt.legend()
+plt.show()
