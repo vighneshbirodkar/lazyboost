@@ -5,11 +5,9 @@ import numpy as np
 from sklearn.model_selection import GridSearchCV
 import os
 import csv
-import multiprocessing as mp
-from functools import partial
+from skimage import io
 
-
-datatype = 'ionosphere'
+datatype = 'mnist'
 
 if datatype == 'breastcancer':
     data = datasets.load_breast_cancer()
@@ -39,6 +37,7 @@ elif datatype == 'ocr':
         rows = list(reader)
 
     data = [row[:-1] for row in rows]
+    print(len(data))
     labels = [int(row[-1]) for row in rows]
 
     X = np.array(data)
@@ -47,24 +46,32 @@ elif datatype == 'ocr':
 
     X, y = X[index, :], y[index]
 
+elif datatype == 'iris':
+    X, y = datasets.load_iris(return_X_y=True)
+    index = np.logical_or(y == 0, y == 1)
+    X, y = X[index], y[index]
 
-def evaluate_adaboost_at_T(T, subopt, X, y):
-    clf = AdaBoost(T=T, basetype='subopt', subopt=subopt)
-    clf.fit(X, y)
-    abcv = AdaBoostCV(clf, num_splits=10)
-    abcv.fit(X, y)
-    avg_error = 1 - np.mean(abcv._test_scores)
-    avg_gamma = np.mean(abcv._gammas)
-    print('T = %d avg. error = %f avg. gamma = %f' % (T, avg_error, avg_gamma))
+elif datatype == 'mnist':
+    path = os.path.expanduser('~/data/mnist_png/training/')
+    X, y = [], []
+    for img in os.listdir(path + '4'):
+        X.append(io.imread(path + '/4/' + img).flatten())
+        y.append(4)
+    for img in os.listdir(path + '7'):
+        X.append(io.imread(path + '/7/' + img).flatten())
+        y.append(7)
 
-    return avg_error, avg_gamma
+    X, y = np.array(X), np.array(y)
 
 
 def evaluate_adaboost_at_range(Trange, subopt, X, y):
-    pool = mp.Pool()
-    func = partial(evaluate_adaboost_at_T, X=X, y=y, subopt=subopt)
-    errors_and_gammas = pool.map(func, Trange)
-    return errors_and_gammas
+    clf = AdaBoost(T=Trange, basetype='subopt', subopt=subopt)
+    abcv = AdaBoostCV(clf, num_splits=10)
+    abcv.fit(X, y)
+
+    return 1 - abcv._test_scores, abcv._gammas
+
+print(X.shape)
 
 error_fig, error_ax = plt.subplots()
 gamma_fig, gamma_ax = plt.subplots()
@@ -72,12 +79,9 @@ gamma_fig, gamma_ax = plt.subplots()
 for i in range(3):
     print('Subopt %d' % (i + 1))
     Trange = [100, 200, 500, 1000]
-    errors_and_gammas = evaluate_adaboost_at_range(Trange, i + 1, X, y)
-    errors_and_gammas = np.array(errors_and_gammas)
-    errors = errors_and_gammas[:, 0]
-    gammas = errors_and_gammas[:, 1]
-    error_ax.plot(Trange, errors, label='subopt = %d' % (i + 1))
-    gamma_ax.plot(Trange, gammas, label='subopt = %d' % (i + 1))
+    errors, gammas = evaluate_adaboost_at_range(1000, i + 1, X, y)
+    error_ax.plot(errors, label='subopt = %d' % (i + 1))
+    gamma_ax.plot(gammas, label='subopt = %d' % (i + 1))
     
 
 gamma_ax.grid(True)
