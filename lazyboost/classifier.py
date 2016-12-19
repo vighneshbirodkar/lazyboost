@@ -2,10 +2,11 @@
 This is a module to be used as a reference for building other modules
 """
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from .baseclassifier import WeakLinearClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import KFold
 
 
 class AdaBoost(BaseEstimator, ClassifierMixin):
@@ -16,6 +17,7 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
         self.verbose = verbose
         self.basetype = basetype
         self.subopt = subopt
+        self.gamma = np.inf
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
@@ -55,6 +57,8 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
                 raise ValueError('unknown bastype')
             predictions = h_t.predict(X)
             epsilon_t = np.sum(D[predictions != y])
+            self.gamma = np.min([self.gamma,  0.5 - epsilon_t])
+
             delta = min(delta, 0.5 - epsilon_t)
             if np.isclose(epsilon_t, 0):
                 break
@@ -75,10 +79,7 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
             predictions = h_t.predict(X)
             D = D * (np.exp(-alpha_t*y*predictions))
             D = D/Z_t
-            #D = D/np.sum(D)
-            #print('Z produt = ', np.prod(self.Z_list))
-        #print('delta = ', delta)
-            
+
         return self
 
     def predict(self, X):
@@ -95,3 +96,25 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
         y[ypred == -1] = self.class_minus
 
         return y
+
+
+class AdaBoostCV(BaseEstimator):
+    def __init__(self, adaboost, num_splits=4):
+        self.adaboost = clone(adaboost)
+        self.num_splits = num_splits
+
+    def fit(self, X, y):
+        X, y = check_X_y(X, y)
+        kf = KFold(n_splits=self.num_splits, shuffle=True, random_state=1)
+
+        self._test_scores = []
+        self._gammas = []
+        for train_index, test_index in kf.split(X):
+            X_train, y_train = X[train_index], y[train_index]
+            X_test, y_test = X[test_index], y[test_index]
+            self.adaboost.fit(X_train, y_train)
+            self._test_scores.append(self.adaboost.score(X_test, y_test))
+            self._gammas.append(self.adaboost.gamma)
+
+    def predict(self, X):
+        raise NotImplementedError()

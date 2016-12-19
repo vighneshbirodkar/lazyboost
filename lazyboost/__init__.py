@@ -1,5 +1,5 @@
 from .baseclassifier import WeakLinearClassifier
-from .classifier import AdaBoost
+from .classifier import AdaBoost, AdaBoostCV
 
 
-__all__ = ['WeakLinearClassifier', 'AdaBoost']
+__all__ = ['WeakLinearClassifier', 'AdaBoost', 'AdaBoostCV']
