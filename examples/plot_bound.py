@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-gamma = np.linspace(0, 0.5, 100)
+gamma = np.linspace(0.0001, 0.499, 100)
 rho = 0.5
 colors = ['r', 'g', 'b', 'y']
 

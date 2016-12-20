@@ -8,7 +8,7 @@ import csv
 from skimage import io
 import random
 
-datatype = 'breastcancer'
+datatype = 'digits'
 
 if datatype == 'breastcancer':
     data = datasets.load_breast_cancer()
@@ -79,21 +79,25 @@ error_fig, error_ax = plt.subplots()
 gamma_fig, gamma_ax = plt.subplots()
 
 
-for i in range(2):
+for i in range(3):
+
     print('Subopt %d' % (i + 1))
-    Trange = [100, 200, 500, 1000]
     errors, gammas = evaluate_adaboost_at_range(1000, i + 1, X, y)
+
+    gammas = np.maximum(np.array(gammas), 1e-6)
     error_ax.plot(errors, label='subopt = %d' % (i + 1))
-    gamma_ax.plot(gammas, label='subopt = %d' % (i + 1))
+    gamma_ax.plot(np.log(gammas), label='subopt = %d' % (i + 1))
 
 
 gamma_ax.grid(True)
 gamma_ax.legend()
-gamma_ax.set_title('Gamma')
+gamma_ax.set_ylabel('$\log(\gamma)$', fontsize=14)
+gamma_ax.set_xlabel('T', fontsize=14)
 
 error_ax.grid(True)
 error_ax.legend()
-error_ax.set_title('Error')
+error_ax.set_ylabel('CV-Error', fontsize=14)
+error_ax.set_xlabel('T', fontsize=14)
 
 
 plt.show()

@@ -68,6 +68,9 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
 
             delta = min(delta, 0.5 - epsilon_t)
             if np.isclose(epsilon_t, 0):
+                if t == 0:
+                    self.classifiers.append(h_t)
+                    self.alphas.append(1)
                 break
             #epsilon_t = np.max(epsilon_t, 1e-16)
 
@@ -142,7 +145,7 @@ class AdaBoostCV(BaseEstimator):
         y[y_orig == self.class_plus] = 1
         y[y_orig == self.class_minus] = -1
 
-        kf = KFold(n_splits=self.num_splits, shuffle=True, random_state=1)
+        kf = KFold(n_splits=self.num_splits, random_state=1)
         self.adaboost.T = self.T
 
         self._test_scores = np.zeros(self.T)
