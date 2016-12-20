@@ -7,6 +7,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from .baseclassifier import WeakLinearClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import KFold
+import random
 
 
 class AdaBoost(BaseEstimator, ClassifierMixin):
@@ -101,7 +102,22 @@ class AdaBoost(BaseEstimator, ClassifierMixin):
         y[ypred == 1] = self.class_plus
         y[ypred == -1] = self.class_minus
 
+        self._last_predictions = predictions
         return y
+
+    def get_margin(self, X, y):
+        check_is_fitted(self, ['classifiers', 'alphas'])
+
+        predictions = np.zeros(X.shape[0], dtype=np.float)
+        for i in range(min(len(self.classifiers), self.Tlimit)):
+            predictions += (self.alphas[i]*self.classifiers[i].predict(X))
+
+        y_orig = y
+        y = np.copy(y_orig)
+        y[y_orig == self.class_plus] = 1
+        y[y_orig == self.class_minus] = -1
+
+        return (predictions*y)/(np.sum(np.abs(self.alphas)))
 
 
 class AdaBoostCV(BaseEstimator):

@@ -6,8 +6,9 @@ from sklearn.model_selection import GridSearchCV
 import os
 import csv
 from skimage import io
+import random
 
-datatype = 'mnist'
+datatype = 'breastcancer'
 
 if datatype == 'breastcancer':
     data = datasets.load_breast_cancer()
@@ -73,16 +74,18 @@ def evaluate_adaboost_at_range(Trange, subopt, X, y):
 
 print(X.shape)
 
+
 error_fig, error_ax = plt.subplots()
 gamma_fig, gamma_ax = plt.subplots()
 
-for i in range(3):
+
+for i in range(2):
     print('Subopt %d' % (i + 1))
     Trange = [100, 200, 500, 1000]
     errors, gammas = evaluate_adaboost_at_range(1000, i + 1, X, y)
     error_ax.plot(errors, label='subopt = %d' % (i + 1))
     gamma_ax.plot(gammas, label='subopt = %d' % (i + 1))
-    
+
 
 gamma_ax.grid(True)
 gamma_ax.legend()
@@ -92,4 +95,6 @@ error_ax.grid(True)
 error_ax.legend()
 error_ax.set_title('Error')
 
+
 plt.show()
+
